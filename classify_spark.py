@@ -1,5 +1,5 @@
 # Note run below command to open the spark instances with sparkdl lib
-# spark-submit --packages databricks:spark-deep-learning:1.5.0-spark2.4-s_2.11 --executor-cores 3 --num-executors 24 --driver-memory 8g --executor-memory 8g .\classify_spark.py
+# spark-submit --packages databricks:spark-deep-learning:1.5.0-spark2.4-s_2.11 --executor-cores 3 --num-executors 24 --driver-memory 16g --executor-memory 16g .\classify_spark.py
 
 
 from pyspark.ml.image import ImageSchema
@@ -11,36 +11,19 @@ from pyspark.ml import Pipeline
 from sparkdl import DeepImageFeaturizer
 from pyspark.ml.util import DefaultParamsReadable, DefaultParamsWritable
 from functools import reduce
+import os
 
-# I tried to setup sprakconf with the package some errors are thrown
-# config = SparkConf().setAll([('spark.executor.memory', '8g'), ('spark.executor.cores', '3'), ('spark.cores.max', '3'), ('spark.driver.memory','8g'), ('spark.jars.packages', 'databricks:spark-deep-learning:1.5.0-spark2.4-s_2.11')])
-# sc = SparkContext(conf=config)
-# sqlContext = SQLContext(sc)
+img_dir = ".\\fashion_spark"
+dataframes = []
+index = 0
+for dirs in os.listdir(img_dir):
+    print(os.path.join(img_dir, dirs))
+    imageSchema = ImageSchema.readImages(os.path.join(img_dir, dirs)).withColumn("label", lit(index))
+    dataframes.append(imageSchema)
+    index += 1
 
-img_dir = "C:\\Users\\Lenovo\\bigdata\\Fashiondataset\\Apparel\\Topwear"
-
-#Read images and Create training & test DataFrames for transfer learning
-zero = ImageSchema.readImages(img_dir + "/Belts").withColumn("label", lit(0))
-one = ImageSchema.readImages(img_dir + "/Blazers").withColumn("label", lit(1))
-two = ImageSchema.readImages(img_dir + "/Dresses").withColumn("label", lit(2))
-three = ImageSchema.readImages(img_dir + "/Dupatta").withColumn("label", lit(3))
-four = ImageSchema.readImages(img_dir + "/Kurtas").withColumn("label", lit(4))
-five = ImageSchema.readImages(img_dir + "/Kurtis").withColumn("label", lit(5))
-six = ImageSchema.readImages(img_dir + "/Nehru Jackets").withColumn("label", lit(6))
-seven = ImageSchema.readImages(img_dir + "/Rain Jacket").withColumn("label", lit(7))
-eight = ImageSchema.readImages(img_dir + "/Shirts").withColumn("label", lit(8))
-nine = ImageSchema.readImages(img_dir + "/Suits").withColumn("label", lit(9))
-ten = ImageSchema.readImages(img_dir + "/Sweatshirts").withColumn("label", lit(10))
-eleven = ImageSchema.readImages(img_dir + "/Tops").withColumn("label", lit(11))
-twelve = ImageSchema.readImages(img_dir + "/Tshirts").withColumn("label", lit(12))
-thirteen = ImageSchema.readImages(img_dir + "/Waistcoat").withColumn("label", lit(13))
-# accessories_train, accessories_test = accessories_df.randomSplit([0.6, 0.4])
-# apparel_train, apparel_test = apparel_df.randomSplit([0.6, 0.4])
-# train_df = accessories_train.unionAll(apparel_train)
-# test_df = accessories_test.unionAll(apparel_test)
-
-dataframes = [zero, one, two, three,four,
-             five, six, seven, eight, nine, ten,eleven,twelve, thirteen]
+print(dataframes)
+print(len(dataframes))
 
 # merge data frame
 df = reduce(lambda first, second: first.union(second), dataframes)
